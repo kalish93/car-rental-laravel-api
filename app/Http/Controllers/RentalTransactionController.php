@@ -25,7 +25,6 @@ class RentalTransactionController extends Controller
     public function store(Request $request) {
         // Validate request data
         $this->validate($request, [
-            // 'user_id' => 'required|exists:users,id',
             'car_id' => 'required|exists:cars,id',
             'rental_start_date' => 'required|date',
             'rental_end_date' => 'required|date|after:rental_start_date'
@@ -74,6 +73,7 @@ class RentalTransactionController extends Controller
 
         return response()->json(['message' => 'Rental transaction deleted'], 200);
     }
+
     public function returnCar(Request $request, $id) {
         // Find the rental transaction
         $rental = RentalTransaction::findOrFail($id);
@@ -103,15 +103,17 @@ class RentalTransactionController extends Controller
         return $days * $pricePerDay;
     }
 
-    public function myRentHistory(Request $request){
+    public function myRentHistory(Request $request, $userId){
         $pageSize = $request->input('pageSize', 10); // Default page size is 10
         $pageNumber = $request->input('pageNumber', 1); // Default page number is 1
 
         $rental = RentalTransaction::with('car', 'paymentTransaction')
-        ->where('user_id', Auth::user()->id)
-        ->paginate($pageSize, ['*'], 'page', $pageNumber);
+            ->where('user_id', $userId)
+            ->paginate($pageSize, ['*'], 'page', $pageNumber);
+
         return $rental;
     }
+
     public function RentHistory(Request $request){
         $pageSize = $request->input('pageSize', 10);
         $pageNumber = $request->input('pageNumber', 1);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Car;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class CarController extends Controller {
     // List all cars
@@ -95,11 +96,10 @@ class CarController extends Controller {
         return response()->json(['message' => 'Car updated successfully', 'car' => $car], 200);
     }
 
-    // Delete a car
     public function destroy($id) {
         $car = Car::find($id);
         if (!$car) {
-            return response()->json(['message' => 'Car not found'], 404);
+            return $this->sendErrorResponse('Car not found', null, 404);
         }
 
         // Delete the car's picture files
@@ -109,18 +109,52 @@ class CarController extends Controller {
         $car->delete();
 
         // Return a success message
-        return response()->json(['message' => 'Car deleted successfully'], 200);
+        return $this->sendSuccessResponse('Car deleted successfully', null, 200);
     }
 
+    // Change car status
+    public function changeCarStatus($id, Request $request) {
+        $car = Car::find($id);
+
+        if (!$car) {
+            return $this->sendErrorResponse('Car not found', null, 404);
+        }
+
+        // Validate request data
+        $validator = Validator::make($request->all(), [
+            'available' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendErrorResponse('Validation failed', $validator->errors(), 422);
+        }
+
+        // Update the car status
+        $car->update(['available' => $request->available]);
+
+        // Return a success message
+        return $this->sendSuccessResponse('Car status changed successfully', null, 200);
+    }
+
+    // List available cars
     public function availableCars() {
         $today = now()->toDateString(); // Get the current date
 
         $availableCars = Car::whereDoesntHave('rentalTransactions', function ($query) use ($today) {
             $query->where('rental_end_date', '>=', $today);
-        })->get();
+        })->where('available', '=', true)->get();
 
-        return response()->json(['cars' => $availableCars], 200);
+        return $this->sendSuccessResponse('Available cars fetched successfully', ['cars' => $availableCars], 200);
     }
 
+    // Helper method for sending success responses
+    private function sendSuccessResponse($message, $data = null, $status = 200) {
+        return response()->json(['message' => $message, 'data' => $data], $status);
+    }
+
+    // Helper method for sending error responses
+    private function sendErrorResponse($message, $errors = null, $status = 422) {
+        return response()->json(['message' => $message, 'errors' => $errors], $status);
+    }
 }
 

@@ -7,11 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
+
 class UserController extends Controller
 {
     public function register(Request $request)
     {
-        $request->validate([
+        $validator = $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
             'phone_number' => 'required|unique:users',
@@ -51,18 +52,24 @@ class UserController extends Controller
             } else {
                 return;
             }
-            return response()->json(['accessToken' => $token], 200);
+            return response()->json(['message' => 'User Logged in successfully','accessToken' => $token], 200);
 
         }
     }
 
-    public function profile(){
-        return Auth::user();
+    public function profile($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return $this->sendErrorResponse('User not found', null, 404);
+        }
+
+        return $user;
     }
 
     public function registerAdmin(Request $request)
     {
-        $request->validate([
+        $validator = $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
             'phone_number' => 'required|unique:users',
@@ -82,7 +89,8 @@ class UserController extends Controller
         return response()->json(['message' => 'User registered successfully', 'user' => $user], 201);
     }
 
-    public function allUsers(Request $request){
+    public function allUsers(Request $request)
+    {
         $pageSize = $request->input('pageSize', 10);
         $pageNumber = $request->input('pageNumber', 1);
 
@@ -91,4 +99,28 @@ class UserController extends Controller
         return $users;
     }
 
+    public function deleteUser($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return $this->sendErrorResponse('User not found', null, 404);
+        }
+
+        $user->delete();
+
+        return $this->sendSuccessResponse('User deleted successfully', ['user' => $user]);
+    }
+
+    // Helper method for sending success responses
+    private function sendSuccessResponse($message, $data = null, $status = 200)
+    {
+        return response()->json(['message' => $message, 'data' => $data], $status);
+    }
+
+    // Helper method for sending error responses
+    private function sendErrorResponse($message, $errors = null, $status = 422)
+    {
+        return response()->json(['message' => $message, 'errors' => $errors], $status);
+    }
 }
