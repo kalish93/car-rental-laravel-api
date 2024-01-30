@@ -30,7 +30,6 @@ Route::group(['middleware' => 'jwt.auth'], function () {
     Route::get('/users',[UserController::class, 'allUsers']);
     Route::delete('/users/{id}',[UserController::class, 'deleteUser']);
 
-    Route::get('/cars', [CarController::class, 'index']); // List all cars
     Route::get('/cars/available', [CarController::class, 'availableCars']); // List all cars
     Route::post('/cars', [CarController::class, 'registerCar']); // Register a new car
     Route::get('/cars/{id}', [CarController::class, 'show']); // View a specific car
@@ -50,5 +49,5 @@ Route::group(['middleware' => 'jwt.auth'], function () {
     Route::post('/process-payment', [PaymentController::class, 'processPayment']);
 
 });
-
+Route::get('/cars', [CarController::class, 'index']); // List all cars
 Route::put('/cars/{id}/change-status', [CarController::class, 'changeCarStatus']);
